@@ -1,13 +1,13 @@
 pub mod music_cluster{
-    use std::{path, time::Duration, fs::read_dir, borrow::{Borrow, BorrowMut}, cmp::Ordering};
+    use std::cmp::Ordering;
 
     use colored::Colorize;
     use filepath::FilePath;
-    use lofty::{error::ErrorKind, TaggedFile, AudioFile};
+    use lofty::AudioFile;
 
 
     pub fn get_music_cluster(){
-        let mut base_dir = Directory::create(r"C:\Users\Administrator\Music", true);
+        let mut base_dir = Directory::create(r"C:\Users\Administrator\Music");
         base_dir.read_files();
         base_dir.print();
 
@@ -69,10 +69,6 @@ pub mod music_cluster{
             for entry in &self.files{
                 match entry {
                     FsEntry::File(f) => {
-                        let tab= "\t|".repeat((self.z_index as usize)*2);
-                        let vertical_pipe= "|".repeat(self.z_index as usize);
-
-                        let parent_folder_lenght = self.path.split("\\").last().unwrap().trim().chars().count();
                         match f.file_type {
                             FileType::AudioFile(_) => println!("{}{}"," ".repeat(space_count), f.path.split("\\").last().unwrap().purple()),
                             FileType::File => println!("{}{}",  " ".repeat(space_count), f.path.split("\\").last().unwrap().white())
@@ -88,11 +84,11 @@ pub mod music_cluster{
 
         fn read_files(&mut self){
             let files: Vec<_> = std::fs::read_dir(&self.path).expect("error reading files").collect();
-            let files = files.iter().for_each(|f| {
+            files.iter().for_each(|f| {
                 if let Ok(file) = f {
                     if file.metadata().expect("error getting metadata").is_dir(){
                         // dir
-                        let dir = Directory::create(file.path().to_str().unwrap(), false);
+                        let dir = Directory::create(file.path().to_str().unwrap());
                         let dir = FsEntry::Directory(dir);
                         if let FsEntry::Directory(mut d) = dir {
                             d.read_files();
@@ -114,14 +110,14 @@ pub mod music_cluster{
                 }
             });
 
-            self.files.sort_by(|a,b| match a {
-                FsEntry::File(f) => Ordering::Less,
+            self.files.sort_by(|a,_| match a {
+                FsEntry::File(_) => Ordering::Less,
                 FsEntry::Directory(_) => Ordering::Greater
             });
         }
 
 
-        fn create(path: &str, is_root: bool) -> Directory{
+        fn create(path: &str) -> Directory{
             Directory{
                 path: path.to_string(),
                 z_index: 0,
@@ -148,7 +144,7 @@ pub mod music_cluster{
                     }
                 },
                 Err(ref e) => {
-                    if matches!(e.kind(), lofty::error::ErrorKind::UnknownFormat) || matches!(e.kind(), lofty::error::ErrorKind::FileDecoding(e)){
+                    if matches!(e.kind(), lofty::error::ErrorKind::UnknownFormat) || matches!(e.kind(), lofty::error::ErrorKind::FileDecoding(_)){
                             // normal file
                         if let Ok(path) = file.path() {
                             Some(File{
