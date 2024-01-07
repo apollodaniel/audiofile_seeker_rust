@@ -1,6 +1,7 @@
 pub mod music_cluster{
     use std::{path, time::Duration, fs::read_dir, borrow::{Borrow, BorrowMut}};
 
+    use colored::Colorize;
     use filepath::FilePath;
     use lofty::{error::ErrorKind, TaggedFile, AudioFile};
 
@@ -8,9 +9,7 @@ pub mod music_cluster{
     pub fn get_music_cluster(){
         let mut base_dir = Directory::create(r"C:\Users\Administrator\Music", true);
         base_dir.read_files();
-        for file in base_dir.files{
-            println!("f {}",file);          
-        }
+        base_dir.print_formatted();
     }
 
     pub struct Directory{
@@ -52,6 +51,23 @@ pub mod music_cluster{
     }
 
     impl Directory {
+
+        fn print_formatted(&self){
+            println!("\t{}",self.path.split("\\").last().unwrap().red());
+            for entry in &self.files{
+                match entry {
+                    FsEntry::File(f) => {
+                        match f.file_type {
+                            FileType::AudioFile(_) => println!("\t{}", f.path.split("\\").last().unwrap().purple()),
+                            FileType::File => println!("\t{}", f.path.split("\\").last().unwrap().white())
+                        }
+                    },
+                    FsEntry::Directory(d) => {
+                        d.print_formatted();
+                    }
+                }
+            }
+        }
 
         fn read_files(&mut self){
             let files: Vec<_> = std::fs::read_dir(&self.path).expect("error reading files").collect();
