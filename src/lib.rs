@@ -1,5 +1,5 @@
 pub mod music_cluster{
-    use std::{path, time::Duration, fs::read_dir, borrow::{Borrow, BorrowMut}};
+    use std::{path, time::Duration, fs::read_dir, borrow::{Borrow, BorrowMut}, cmp::Ordering};
 
     use colored::Colorize;
     use filepath::FilePath;
@@ -9,13 +9,15 @@ pub mod music_cluster{
     pub fn get_music_cluster(){
         let mut base_dir = Directory::create(r"C:\Users\Administrator\Music", true);
         base_dir.read_files();
-        base_dir.print_formatted();
+        base_dir.print();
+
+
     }
 
     pub struct Directory{
         path: String,
         files: Vec<FsEntry>,
-        is_root: bool
+        z_index: u16
     }
 
     pub struct File{
@@ -52,18 +54,33 @@ pub mod music_cluster{
 
     impl Directory {
 
-        fn print_formatted(&self){
-            println!("\t{}",self.path.split("\\").last().unwrap().red());
+        fn print(&mut self){
+            println!("\n\tListing musics on -> {}\n", self.path);
+            self._print_formatted(0);
+        }
+
+        fn _print_formatted(&self, space_count: usize){
+            let parent_folder_lenght = self.path.split("\\").last().unwrap().trim().chars().count();
+            let space_count = space_count + (parent_folder_lenght+1);
+            if self.z_index == 0{
+                println!("{}:",self.path.split("\\").last().unwrap().red());
+            }
+        
             for entry in &self.files{
                 match entry {
                     FsEntry::File(f) => {
+                        let tab= "\t|".repeat((self.z_index as usize)*2);
+                        let vertical_pipe= "|".repeat(self.z_index as usize);
+
+                        let parent_folder_lenght = self.path.split("\\").last().unwrap().trim().chars().count();
                         match f.file_type {
-                            FileType::AudioFile(_) => println!("\t{}", f.path.split("\\").last().unwrap().purple()),
-                            FileType::File => println!("\t{}", f.path.split("\\").last().unwrap().white())
+                            FileType::AudioFile(_) => println!("{}{}"," ".repeat(space_count), f.path.split("\\").last().unwrap().purple()),
+                            FileType::File => println!("{}{}",  " ".repeat(space_count), f.path.split("\\").last().unwrap().white())
                         }
                     },
                     FsEntry::Directory(d) => {
-                        d.print_formatted();
+                        println!("{}{}:"," ".repeat(space_count),d.path.split("\\").last().unwrap().red());
+                        d._print_formatted(space_count);
                     }
                 }
             }
@@ -81,7 +98,7 @@ pub mod music_cluster{
                             d.read_files();
                             let new_dir = Directory{
                                 files: d.files,
-                                is_root: false,
+                                z_index: self.z_index+1,
                                 path: d.path
                             };
                             self.files.push(FsEntry::Directory(new_dir));
@@ -96,13 +113,18 @@ pub mod music_cluster{
                     }
                 }
             });
+
+            self.files.sort_by(|a,b| match a {
+                FsEntry::File(f) => Ordering::Less,
+                FsEntry::Directory(_) => Ordering::Greater
+            });
         }
 
 
         fn create(path: &str, is_root: bool) -> Directory{
             Directory{
                 path: path.to_string(),
-                is_root: is_root,
+                z_index: 0,
                 files: Vec::new()
             }
         }
