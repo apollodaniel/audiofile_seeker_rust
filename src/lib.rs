@@ -9,13 +9,7 @@ pub mod music_cluster{
         let mut base_dir = Directory::create(r"C:\Users\Administrator\Music", true);
         base_dir.read_files();
         for file in base_dir.files{
-            println!("f {}",file);
-            
-            if let FsEntry::Directory(dir) = file {
-                for f in dir.files {
-                    println!("f {}",f);
-                }
-            }            
+            println!("f {}",file);          
         }
     }
 
@@ -57,17 +51,6 @@ pub mod music_cluster{
         }
     }
 
-    impl ToOwned for FsEntry{
-        type Owned = FsEntry;
-        
-        fn clone_into(&self, target: &mut Self::Owned) {
-            self.clone_into(target)
-        }
-        fn to_owned(&self) -> Self::Owned {
-            self.to_owned()
-        }
-    }
-
     impl Directory {
 
         fn read_files(&mut self){
@@ -80,6 +63,12 @@ pub mod music_cluster{
                         let dir = FsEntry::Directory(dir);
                         if let FsEntry::Directory(mut d) = dir {
                             d.read_files();
+                            let new_dir = Directory{
+                                files: d.files,
+                                is_root: false,
+                                path: d.path
+                            };
+                            self.files.push(FsEntry::Directory(new_dir));
                         }
                     }else{
                         // file
