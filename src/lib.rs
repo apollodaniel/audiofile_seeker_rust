@@ -1,16 +1,30 @@
 pub mod music_cluster{
-    use std::cmp::Ordering;
+    use std::{cmp::Ordering, path::PathBuf};
 
     use colored::Colorize;
     use filepath::FilePath;
     use lofty::AudioFile;
 
-    pub fn get_music_cluster(){
-        let mut base_dir = Directory::create(r"C:\Users\Administrator\Music");
-        base_dir.read_files();
-        base_dir.print();
+    pub fn get_music_cluster(path: &str){
+        let path = path.trim();
+        let path = get_absolute_path(path);
+        if let Ok(absolute_path) = path {
+            let mut base_dir = Directory::create(absolute_path.to_str().unwrap());
+            base_dir.read_files();
+            base_dir.print();
+        }
+    }
 
-
+    pub fn get_absolute_path(path: impl AsRef<std::path::Path>) -> std::io::Result<PathBuf> {
+        let path = path.as_ref();
+    
+        let absolute_path = if path.is_absolute() {
+            path.to_path_buf()
+        } else {
+            std::env::current_dir()?.join(path)
+        };
+    
+        Ok(absolute_path)
     }
 
     pub struct Directory{
@@ -59,10 +73,18 @@ pub mod music_cluster{
         }
 
         fn _print_formatted(&self, space_count: usize){
-            let parent_folder_lenght = self.path.split("\\").last().unwrap().trim().chars().count();
+            let folder_name = if self.path.chars().last().unwrap() == '\\' {
+                let mut temp_name_list: Vec<char> = self.path.chars().collect();
+                temp_name_list.remove(temp_name_list.len()-1);
+                let string: String = temp_name_list.iter().collect();
+                string.as_str().split("\\").last().unwrap().red()
+            } else {
+                self.path.split("\\").last().unwrap().red()
+            };
+            let parent_folder_lenght = folder_name.chars().count();
             let space_count = space_count + (parent_folder_lenght+1);
             if self.z_index == 0{
-                println!("{}:",self.path.split("\\").last().unwrap().red());
+                println!("{}:",folder_name);
             }
         
             for entry in &self.files{
@@ -82,6 +104,7 @@ pub mod music_cluster{
         }
 
         fn read_files(&mut self){
+            println!("Reading: {}", self.path);
             let files: Vec<_> = std::fs::read_dir(&self.path).expect("error reading files").collect();
             files.iter().for_each(|f| {
                 if let Ok(file) = f {
