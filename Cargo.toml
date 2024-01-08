@@ -1,5 +1,5 @@
 [package]
-name = "music_cluster_rust"
+name = "audiofile_seeker"
 version = "0.1.0"
 edition = "2021"
 

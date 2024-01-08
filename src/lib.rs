@@ -1,4 +1,4 @@
-pub mod music_cluster{
+pub mod seeker{
     use std::{cmp::Ordering, path::PathBuf};
 
     use colored::Colorize;
