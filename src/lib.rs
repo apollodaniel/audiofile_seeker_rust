@@ -5,7 +5,6 @@ pub mod music_cluster{
     use filepath::FilePath;
     use lofty::AudioFile;
 
-
     pub fn get_music_cluster(){
         let mut base_dir = Directory::create(r"C:\Users\Administrator\Music");
         base_dir.read_files();
@@ -41,10 +40,10 @@ pub mod music_cluster{
         fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
             let mut string_buf = String::new();
             match self {
-                FsEntry::Directory(d) => {
+                FsEntry::Directory(_) => {
                     string_buf.push_str("Dir");
                 },
-                FsEntry::File(f) => {
+                FsEntry::File(_) => {
                     string_buf.push_str("File");
                 }
             }
@@ -55,7 +54,7 @@ pub mod music_cluster{
     impl Directory {
 
         fn print(&mut self){
-            println!("\n\tListing musics on -> {}\n", self.path);
+            println!("\nListing musics on -> {}\n", self.path);
             self._print_formatted(0);
         }
 
@@ -70,7 +69,7 @@ pub mod music_cluster{
                 match entry {
                     FsEntry::File(f) => {
                         match f.file_type {
-                            FileType::AudioFile(_) => println!("{}{}"," ".repeat(space_count), f.path.split("\\").last().unwrap().purple()),
+                            FileType::AudioFile(_) => println!("{}({}) - {}", " ".repeat(space_count), f.format_duration(),f.path.split("\\").last().unwrap().purple()),
                             FileType::File => println!("{}{}",  " ".repeat(space_count), f.path.split("\\").last().unwrap().white())
                         }
                     },
@@ -127,6 +126,22 @@ pub mod music_cluster{
     }
 
     impl File {
+
+        fn format_duration(&self)->String{
+            if let FileType::AudioFile(seconds) =  self.file_type{
+                let secs = seconds % 60;
+                let minutes = (seconds/60)%60;
+                let hour = (seconds/60)/60;
+                if hour != 0 && minutes != 0 {
+                    format!("{:0>2}:{:0>2}:{:0>2}",hour,minutes,secs)
+                }else{
+                    format!("{:0>2}:{:0>2}",minutes,secs)
+                }
+            }else{
+                String::new()
+            }
+        }
+
         fn from_file(file: &mut std::fs::File) -> Option<File>{
             let lofty_file = lofty::read_from(file);
             match lofty_file {
